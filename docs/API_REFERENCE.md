@@ -110,10 +110,13 @@ Constructs `docs/Telco_Churn_Writeup_and_Architecture.docx` via
 `python-docx`. Helpers: `add_heading()`, `add_para()`, `add_rich_para()`
 (mixed bold/plain runs), `add_bullets()`, `add_table()` (styled, zebra-
 striped), `add_code_block()` (shaded monospace), `add_image()` (centered,
-optional caption), `add_rule()`, `add_page_break()`. Numbers embedded in
-this script (model metrics, lift, tier rates) were copied from the
-executed notebook's output -- see the note in README.md about keeping them
-in sync if the modeling code changes.
+optional caption), `add_rule()`, `add_page_break()`. All model metrics,
+lift figures, and tier rates quoted in the document are loaded at the top
+of the script from `../models/metrics.json` (the artifact the notebook
+exports in Section 10) into the module-level dict `M`, and every table/
+paragraph that quotes a number reads it from `M` rather than a literal --
+the script raises `FileNotFoundError` immediately if `metrics.json` is
+missing, rather than silently falling back to stale numbers.
 
 ## Development / verification scripts (`src/pipeline_dev.py`, `src/modeling_dev.py`)
 
