@@ -1,0 +1,93 @@
+{
+  "recommended_model": "XGBoost",
+  "threshold_independent": {
+    "Logistic Regression": {
+      "roc_auc": 0.845,
+      "pr_auc": 0.651,
+      "precision_at_0.5": 0.505,
+      "recall_at_0.5": 0.802,
+      "f1_at_0.5": 0.62
+    },
+    "Random Forest": {
+      "roc_auc": 0.846,
+      "pr_auc": 0.661,
+      "precision_at_0.5": 0.526,
+      "recall_at_0.5": 0.797,
+      "f1_at_0.5": 0.634
+    },
+    "XGBoost": {
+      "roc_auc": 0.847,
+      "pr_auc": 0.659,
+      "precision_at_0.5": 0.517,
+      "recall_at_0.5": 0.805,
+      "f1_at_0.5": 0.63
+    }
+  },
+  "cost_sensitive": {
+    "Logistic Regression": {
+      "threshold": 0.27,
+      "precision": 0.423,
+      "recall": 0.936,
+      "f1": 0.582,
+      "median_cost": 33500,
+      "ci_lower": 29648,
+      "ci_upper": 37950
+    },
+    "Random Forest": {
+      "threshold": 0.22,
+      "precision": 0.389,
+      "recall": 0.96,
+      "f1": 0.554,
+      "median_cost": 34200,
+      "ci_lower": 30998,
+      "ci_upper": 37650
+    },
+    "XGBoost": {
+      "threshold": 0.3,
+      "precision": 0.425,
+      "recall": 0.93,
+      "f1": 0.583,
+      "median_cost": 33850,
+      "ci_lower": 29800,
+      "ci_upper": 38450
+    }
+  },
+  "cost_assumptions": {
+    "false_negative_cost": 400,
+    "false_positive_cost": 50
+  },
+  "lift_top_decile_pct": {
+    "Logistic Regression": 28.3,
+    "Random Forest": 27.8,
+    "XGBoost": 28.3
+  },
+  "risk_tiers": [
+    {
+      "tier": "Low",
+      "customers": 590,
+      "observed_churn_rate": 0.044
+    },
+    {
+      "tier": "Medium",
+      "customers": 363,
+      "observed_churn_rate": 0.237
+    },
+    {
+      "tier": "High",
+      "customers": 291,
+      "observed_churn_rate": 0.488
+    },
+    {
+      "tier": "Critical",
+      "customers": 165,
+      "observed_churn_rate": 0.727
+    }
+  ],
+  "clv_priority_overlap_top10": 1,
+  "revenue_at_risk": {
+    "churned_headcount_share_pct": 26.5,
+    "churned_revenue_share_pct": 30.5,
+    "avg_annual_value_churned": 893.3,
+    "avg_annual_value_retained": 735.18
+  }
+}
