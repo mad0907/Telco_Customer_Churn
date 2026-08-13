@@ -1167,6 +1167,75 @@ except Exception as exc:
     raise RuntimeError("Failed to persist the recommended model") from exc
 """)
 
+md("""
+Every headline number quoted in the accompanying write-up (Results,
+lift/gain, risk-tier validation, cost-sensitive comparison) is exported
+below to a single artifact rather than copied into the document by hand.
+`src/build_writeup_doc.py` reads this file to populate its tables, so a
+rerun of this notebook with different results and a rerun of the write-up
+build script will always agree -- there is no separate place a number can
+go stale.
+""")
+
+code("""
+metrics_export = {
+    "recommended_model": "XGBoost",
+    "threshold_independent": {
+        model: {
+            "roc_auc": round(float(row["roc_auc"]), 3),
+            "pr_auc": round(float(row["pr_auc"]), 3),
+            "precision_at_0.5": round(float(row["precision@0.5"]), 3),
+            "recall_at_0.5": round(float(row["recall@0.5"]), 3),
+            "f1_at_0.5": round(float(row["f1@0.5"]), 3),
+        }
+        for model, row in metrics_df.iterrows()
+    },
+    "cost_sensitive": {
+        model: {
+            "threshold": round(float(cost_sensitive_df.loc[model, "threshold"]), 2),
+            "precision": round(float(cost_sensitive_df.loc[model, "precision"]), 3),
+            "recall": round(float(cost_sensitive_df.loc[model, "recall"]), 3),
+            "f1": round(float(cost_sensitive_df.loc[model, "f1"]), 3),
+            "median_cost": int(ci_df.loc[model, "median_cost_$"]),
+            "ci_lower": int(ci_df.loc[model, "ci_lower_$"]),
+            "ci_upper": int(ci_df.loc[model, "ci_upper_$"]),
+        }
+        for model in cost_sensitive_df.index
+    },
+    "cost_assumptions": {
+        "false_negative_cost": COST_FALSE_NEGATIVE,
+        "false_positive_cost": COST_FALSE_POSITIVE,
+    },
+    "lift_top_decile_pct": {name: round(float(pct), 1) for name, pct in lift_summary.items()},
+    "risk_tiers": [
+        {
+            "tier": tier,
+            "customers": int(row["customers"]),
+            "observed_churn_rate": round(float(row["observed_churn_rate"]), 3),
+        }
+        for tier, row in tier_validation.iterrows()
+    ],
+    "clv_priority_overlap_top10": int(overlap),
+    "revenue_at_risk": {
+        "churned_headcount_share_pct": round(float(clean_df["Churn"].mean() * 100), 1),
+        "churned_revenue_share_pct": round(float(at_risk_revenue / total_revenue * 100), 1),
+        "avg_annual_value_churned": round(
+            float(clean_df.loc[clean_df["Churn"] == 1, "projected_annual_value"].mean()), 2
+        ),
+        "avg_annual_value_retained": round(
+            float(clean_df.loc[clean_df["Churn"] == 0, "projected_annual_value"].mean()), 2
+        ),
+    },
+}
+
+try:
+    with open(MODELS_DIR / "metrics.json", "w") as f:
+        json.dump(metrics_export, f, indent=2)
+    print(f"Metrics exported to {(MODELS_DIR / 'metrics.json').resolve()}")
+except Exception as exc:
+    raise RuntimeError("Failed to export metrics.json") from exc
+""")
+
 # ---------------------------------------------------------------------------
 md("""
 ## 11. Model Interpretation -- SHAP

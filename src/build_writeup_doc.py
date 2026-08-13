@@ -1,10 +1,15 @@
 """
 Builds the Word write-up: docs/Telco_Churn_Writeup_and_Architecture.docx
 Combines the analysis write-up with the full deployment/architecture
-blueprint and AI governance section. Numbers embedded below were pulled
-directly from the executed notebook (notebooks/telco_churn_analysis.ipynb)
-to keep the two documents consistent.
+blueprint and AI governance section. Every metric embedded below is loaded
+from ../models/metrics.json, an artifact the notebook exports at the end
+of its run -- not typed in by hand. Regenerating this document after a
+notebook rerun with different results requires no manual number-updating:
+rerun the notebook, then rerun this script.
 """
+import json
+from pathlib import Path
+
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -16,6 +21,18 @@ TEXT_COLOR = RGBColor(0x10, 0x18, 0x28)
 MUTED_COLOR = RGBColor(0x47, 0x54, 0x69)
 ACCENT_COLOR = RGBColor(0x1D, 0x4E, 0xD8)
 RULE_COLOR = "344054"
+
+METRICS_PATH = Path("../models/metrics.json")
+if not METRICS_PATH.exists():
+    raise FileNotFoundError(
+        f"{METRICS_PATH} not found. Run the notebook end to end first -- "
+        "it exports this file in Section 10, and this script reads every "
+        "metric quoted below from it rather than from hardcoded values."
+    )
+with open(METRICS_PATH) as f:
+    M = json.load(f)
+
+MODEL_ORDER = ["Logistic Regression", "Random Forest", "XGBoost"]
 
 doc = Document()
 
@@ -250,19 +267,20 @@ add_para(
     "a model built for this purpose should be deployed, monitored, and "
     "governed once it is making or informing real retention decisions."
 )
+_roc_aucs = [M["threshold_independent"][m]["roc_auc"] for m in MODEL_ORDER]
 add_bullets([
     ("Approach: ", "three models were built and compared -- a Logistic "
      "Regression baseline, a Random Forest (bagging), and an XGBoost "
      "(boosting) model -- evaluated with threshold-independent metrics "
      "(ROC-AUC, PR-AUC) and a cost-sensitive threshold analysis, not "
      "accuracy alone."),
-    ("Result: ", "all three models perform comparably (ROC-AUC 0.845-0.847); "
-     "a bootstrap analysis confirmed the cost differences between them are "
-     "not statistically distinguishable on this dataset. XGBoost is "
-     "recommended for deployment on secondary grounds -- its native fit "
-     "with the interaction effects found in EDA and with SHAP-based "
-     "explainability at serving time -- not because it wins outright on "
-     "a single metric."),
+    ("Result: ", f"all three models perform comparably (ROC-AUC {min(_roc_aucs):.3f}-"
+     f"{max(_roc_aucs):.3f}); a bootstrap analysis confirmed the cost "
+     f"differences between them are not statistically distinguishable on "
+     f"this dataset. {M['recommended_model']} is recommended for deployment "
+     "on secondary grounds -- its native fit with the interaction effects "
+     "found in EDA and with SHAP-based explainability at serving time -- "
+     "not because it wins outright on a single metric."),
     ("Drivers: ", "contract type, tenure, internet service type, and the "
      "presence or absence of protective add-ons (tech support, online "
      "security) are the dominant churn drivers, confirmed independently "
@@ -320,7 +338,9 @@ add_bullets([
      "churn hazard is front-loaded in the first several months rather than "
      "uniform across tenure; a revenue-at-risk analysis found churned "
      "customers are, on average, higher-value than retained customers "
-     "($893/year vs. $735/year), not lower-value as might be assumed; "
+     f"(${M['revenue_at_risk']['avg_annual_value_churned']:,.0f}/year vs. "
+     f"${M['revenue_at_risk']['avg_annual_value_retained']:,.0f}/year), not "
+     "lower-value as might be assumed; "
      "a mutual-information ranking (not Pearson correlation, which is the "
      "wrong tool for nominal categories) identified Contract, "
      "OnlineSecurity, TechSupport, and InternetService as the strongest "
@@ -341,23 +361,37 @@ add_para("Threshold-independent performance on the held-out test set:")
 add_table(
     headers=["Model", "ROC-AUC", "PR-AUC", "Precision@0.5", "Recall@0.5", "F1@0.5"],
     rows=[
-        ["Logistic Regression", "0.845", "0.652", "0.505", "0.802", "0.620"],
-        ["Random Forest", "0.846", "0.662", "0.527", "0.797", "0.634"],
-        ["XGBoost", "0.847", "0.659", "0.517", "0.805", "0.630"],
+        [
+            model,
+            f"{M['threshold_independent'][model]['roc_auc']:.3f}",
+            f"{M['threshold_independent'][model]['pr_auc']:.3f}",
+            f"{M['threshold_independent'][model]['precision_at_0.5']:.3f}",
+            f"{M['threshold_independent'][model]['recall_at_0.5']:.3f}",
+            f"{M['threshold_independent'][model]['f1_at_0.5']:.3f}",
+        ]
+        for model in MODEL_ORDER
     ],
     col_widths_cm=[4.0, 2.2, 2.2, 2.4, 2.2, 2.0],
 )
 add_para(
     "At the cost-minimizing threshold from the cost-sensitive analysis "
-    "(illustrative cost assumptions: $400 false negative, $50 false "
+    f"(illustrative cost assumptions: ${M['cost_assumptions']['false_negative_cost']} "
+    f"false negative, ${M['cost_assumptions']['false_positive_cost']} false "
     "positive):"
 )
 add_table(
     headers=["Model", "Threshold", "Precision", "Recall", "F1", "Median Cost ($)", "95% CI ($)"],
     rows=[
-        ["Logistic Regression", "0.27", "0.423", "0.936", "0.582", "33,500", "29,648 - 37,950"],
-        ["Random Forest", "0.22", "0.389", "0.960", "0.554", "34,200", "30,998 - 37,650"],
-        ["XGBoost", "0.30", "0.425", "0.930", "0.583", "33,850", "29,800 - 38,450"],
+        [
+            model,
+            f"{M['cost_sensitive'][model]['threshold']:.2f}",
+            f"{M['cost_sensitive'][model]['precision']:.3f}",
+            f"{M['cost_sensitive'][model]['recall']:.3f}",
+            f"{M['cost_sensitive'][model]['f1']:.3f}",
+            f"{M['cost_sensitive'][model]['median_cost']:,}",
+            f"{M['cost_sensitive'][model]['ci_lower']:,} - {M['cost_sensitive'][model]['ci_upper']:,}",
+        ]
+        for model in MODEL_ORDER
     ],
     col_widths_cm=[3.6, 2.0, 2.0, 1.8, 1.6, 2.6, 3.0],
     size=8.5,
@@ -370,15 +404,18 @@ add_para(
     "would have been missed by reporting the point estimates alone.",
     italic=True, color=MUTED_COLOR, size=10,
 )
+
+_lift_values = list(M["lift_top_decile_pct"].values())
+_lift_pct = sum(_lift_values) / len(_lift_values)
 add_para(
     "The cost-sensitive threshold assumes the retention team can act on "
     "every flagged customer. In practice, contact capacity is usually "
     "fixed, so the notebook (Section 9.4) also evaluates a capacity-"
-    "constrained view: all three models capture close to 28% of actual "
-    "churners within the top 10% of customers ranked by risk -- a lift of "
-    "roughly 2.8x over random targeting. This is the number to hand to a "
-    "team with a fixed weekly contact capacity; it is a distinct question "
-    "from what the cost-sensitive threshold above answers."
+    f"constrained view: all three models capture close to {_lift_pct:.0f}% of "
+    "actual churners within the top 10% of customers ranked by risk -- a "
+    f"lift of roughly {_lift_pct/10:.1f}x over random targeting. This is the "
+    "number to hand to a team with a fixed weekly contact capacity; it is a "
+    "distinct question from what the cost-sensitive threshold above answers."
 )
 add_para(
     "Model output was also translated into a risk-tier scheme (Low / "
@@ -388,39 +425,40 @@ add_para(
 add_table(
     headers=["Tier", "Customers", "Observed Churn Rate"],
     rows=[
-        ["Low", "590", "4.4%"],
-        ["Medium", "363", "23.7%"],
-        ["High", "291", "48.8%"],
-        ["Critical", "165", "72.7%"],
+        [t["tier"], f"{t['customers']:,}", f"{t['observed_churn_rate']:.1%}"]
+        for t in M["risk_tiers"]
     ],
     col_widths_cm=[3.0, 3.0, 4.0],
 )
+_critical_tier = next(t for t in M["risk_tiers"] if t["tier"] == "Critical")
 add_para(
     "Churn rate rises monotonically from Low to Critical, which is the "
     "check that matters -- a tier scheme where \"Critical\" customers do "
     "not actually churn more often than \"Low\" customers would be a broken "
     "segmentation regardless of how intuitive the cut points look. Note "
-    "that even the Critical tier is 27.3% non-churners, which is why the "
-    "recommended action for that tier (Section 6) is a retention offer, "
-    "not a certainty-based action."
+    f"that even the Critical tier is {1 - _critical_tier['observed_churn_rate']:.1%} "
+    "non-churners, which is why the recommended action for that tier "
+    "(Section 6) is a retention offer, not a certainty-based action."
 )
 add_para(
     "Finally, ranking customers by churn probability alone is not the same "
     "as ranking by revenue protected. Weighting each customer's probability "
     "by their projected annual value (probability x MonthlyCharges x 12) "
     "and comparing the resulting top 10 against the top 10 by raw "
-    "probability found only 1 customer in common between the two lists -- "
-    "a far larger divergence than intuition would suggest. For a capacity-"
-    "constrained retention team, the value-weighted ranking is the more "
-    "defensible prioritization metric, since it directly answers \"where "
-    "does intervention protect the most revenue\" rather than only \"who is "
-    "statistically most likely to leave.\""
+    f"probability found only {M['clv_priority_overlap_top10']} customer in "
+    "common between the two lists -- a far larger divergence than "
+    "intuition would suggest. For a capacity-constrained retention team, "
+    "the value-weighted ranking is the more defensible prioritization "
+    "metric, since it directly answers \"where does intervention protect "
+    "the most revenue\" rather than only \"who is statistically most "
+    "likely to leave.\""
 )
 add_page_break()
 
 add_heading("5. Model Selection and Recommendation", level=2)
-add_rich_para([("Recommendation: ", True, False), ("XGBoost", True, False),
-               (", operated at its cost-minimizing threshold (0.30), with "
+_rec_threshold = M["cost_sensitive"][M["recommended_model"]]["threshold"]
+add_rich_para([("Recommendation: ", True, False), (M["recommended_model"], True, False),
+               (f", operated at its cost-minimizing threshold ({_rec_threshold:.2f}), with "
                 "Logistic Regression and Random Forest retained as "
                 "documented, statistically-tied alternatives.", False, False)])
 add_para(
