@@ -1,0 +1,33 @@
+# Azure ML CLI v2 managed online deployment definition.
+# One deployment per model version, sitting behind the endpoint above.
+# traffic percentage is set separately during canary rollout
+# (0% at first, ramped up after the canary health check passes --
+# see cicd_pipeline.yml).
+
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: xgboost-v1
+endpoint_name: telco-churn-scoring-endpoint
+model: azureml:telco-churn-xgboost:1
+environment: azureml:telco-churn-scoring-env:1
+code_configuration:
+  code: ../deployment
+  scoring_script: score.py
+instance_type: Standard_DS3_v2
+instance_count: 2
+request_settings:
+  request_timeout_ms: 3000
+  max_concurrent_requests_per_instance: 4
+liveness_probe:
+  initial_delay: 30
+  period: 10
+  timeout: 5
+  failure_threshold: 3
+readiness_probe:
+  initial_delay: 30
+  period: 10
+  timeout: 5
+  failure_threshold: 3
+environment_variables:
+  AZURE_KEY_VAULT_URI: https://telco-churn-kv.vault.azure.net/
+  CONFIDENTIAL_LEDGER_ENDPOINT: https://telco-churn-ledger.confidential-ledger.azure.com
+  MODEL_VERSION: "1"

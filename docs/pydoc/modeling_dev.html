@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module modeling_dev</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">modeling_dev</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/Users/munmundas/Documents/Telco_Customer_Churn/src/modeling_dev.py">/Users/munmundas/Documents/Telco_Customer_Churn/src/modeling_dev.py</a></td></tr></table>
+    <p><span class="code">Development/verification&nbsp;script&nbsp;for&nbsp;feature&nbsp;engineering&nbsp;+&nbsp;modeling.<br>
+Not&nbsp;a&nbsp;deliverable.&nbsp;Run&nbsp;with:&nbsp;source&nbsp;venv/bin/activate&nbsp;&amp;&amp;&nbsp;python&nbsp;src/modeling_dev.py</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="numpy.html">numpy</a><br>
+</td><td class="multicolumn"><a href="pandas.html">pandas</a><br>
+</td><td class="multicolumn"><a href="warnings.html">warnings</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-build_preprocessor"><strong>build_preprocessor</strong></a>(X: pandas.core.frame.DataFrame, scale_numeric: bool) -&gt; sklearn.compose._column_transformer.ColumnTransformer</dt><dd><span class="code">Build&nbsp;a&nbsp;ColumnTransformer:&nbsp;one-hot&nbsp;encode&nbsp;categoricals,&nbsp;and&nbsp;either<br>
+StandardScaler&nbsp;or&nbsp;passthrough&nbsp;numeric&nbsp;columns&nbsp;depending&nbsp;on<br>
+scale_numeric&nbsp;(True&nbsp;for&nbsp;Logistic&nbsp;Regression,&nbsp;False&nbsp;for&nbsp;tree&nbsp;ensembles).</span></dd></dl>
+ <dl><dt><a name="-engineer_features"><strong>engineer_features</strong></a>(df: pandas.core.frame.DataFrame) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Derive&nbsp;num_add_on_services,&nbsp;avg_monthly_spend,&nbsp;and&nbsp;tenure_bucket&nbsp;from<br>
+the&nbsp;cleaned&nbsp;frame.&nbsp;See&nbsp;notebook&nbsp;Section&nbsp;6&nbsp;for&nbsp;the&nbsp;justification&nbsp;behind<br>
+each&nbsp;derived&nbsp;feature.</span></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><span class="code">Train&nbsp;and&nbsp;evaluate&nbsp;all&nbsp;three&nbsp;models&nbsp;once,&nbsp;printing&nbsp;headline&nbsp;metrics&nbsp;for&nbsp;each.</span></dd></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>DATA_PATH</strong> = 'data/WA_Fn-UseC_-Telco-Customer-Churn.csv'<br>
+<strong>RANDOM_STATE</strong> = 42</td></tr></table>
+</body></html>

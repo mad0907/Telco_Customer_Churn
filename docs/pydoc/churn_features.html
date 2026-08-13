@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module churn_features</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">churn_features</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/Users/munmundas/Documents/Telco_Customer_Churn/src/churn_features.py">/Users/munmundas/Documents/Telco_Customer_Churn/src/churn_features.py</a></td></tr></table>
+    <p><span class="code">Standalone&nbsp;feature&nbsp;engineering&nbsp;module,&nbsp;used&nbsp;by&nbsp;the&nbsp;Streamlit&nbsp;prototype<br>
+(app.py)&nbsp;at&nbsp;inference&nbsp;time.<br>
+&nbsp;<br>
+This&nbsp;intentionally&nbsp;mirrors&nbsp;the&nbsp;<a href="#-clean">clean</a>()&nbsp;/&nbsp;<a href="#-engineer_features">engineer_features</a>()&nbsp;logic&nbsp;defined<br>
+inline&nbsp;in&nbsp;notebooks/telco_churn_analysis.ipynb&nbsp;rather&nbsp;than&nbsp;importing&nbsp;from<br>
+the&nbsp;notebook.&nbsp;Notebooks&nbsp;are&nbsp;kept&nbsp;self-contained&nbsp;deliverables&nbsp;here&nbsp;so&nbsp;they<br>
+can&nbsp;be&nbsp;read&nbsp;top&nbsp;to&nbsp;bottom&nbsp;without&nbsp;external&nbsp;file&nbsp;dependencies;&nbsp;this&nbsp;module<br>
+exists&nbsp;so&nbsp;a&nbsp;serving&nbsp;surface&nbsp;(app.py,&nbsp;and&nbsp;by&nbsp;extension&nbsp;deployment/score.py<br>
+in&nbsp;a&nbsp;real&nbsp;deployment)&nbsp;has&nbsp;a&nbsp;single&nbsp;importable&nbsp;source&nbsp;for&nbsp;the&nbsp;same<br>
+transformations,&nbsp;rather&nbsp;than&nbsp;re-deriving&nbsp;them&nbsp;independently.<br>
+&nbsp;<br>
+This&nbsp;duplication&nbsp;between&nbsp;notebook&nbsp;and&nbsp;module&nbsp;is&nbsp;exactly&nbsp;the&nbsp;train/serve<br>
+skew&nbsp;risk&nbsp;the&nbsp;architecture&nbsp;document's&nbsp;Azure&nbsp;ML&nbsp;Managed&nbsp;Feature&nbsp;Store<br>
+recommendation&nbsp;is&nbsp;meant&nbsp;to&nbsp;eliminate&nbsp;in&nbsp;a&nbsp;real&nbsp;deployment&nbsp;--&nbsp;here,&nbsp;at<br>
+take-home-exercise&nbsp;scale,&nbsp;keeping&nbsp;the&nbsp;two&nbsp;in&nbsp;careful&nbsp;sync&nbsp;by&nbsp;hand&nbsp;is&nbsp;an<br>
+accepted,&nbsp;explicitly&nbsp;noted&nbsp;trade-off.</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="numpy.html">numpy</a><br>
+</td><td class="multicolumn"><a href="pandas.html">pandas</a><br>
+</td><td class="multicolumn"></td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-clean"><strong>clean</strong></a>(df: pandas.core.frame.DataFrame) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Apply&nbsp;the&nbsp;same&nbsp;cleaning&nbsp;rules&nbsp;used&nbsp;in&nbsp;notebook&nbsp;Section&nbsp;4:<br>
+-&nbsp;TotalCharges:&nbsp;blank&nbsp;strings&nbsp;(all&nbsp;tenure&nbsp;==&nbsp;0)&nbsp;become&nbsp;0.0,&nbsp;a<br>
+&nbsp;&nbsp;structural&nbsp;zero&nbsp;rather&nbsp;than&nbsp;a&nbsp;missing&nbsp;value.<br>
+-&nbsp;SeniorCitizen:&nbsp;normalized&nbsp;to&nbsp;Yes/No&nbsp;for&nbsp;encoding&nbsp;consistency.<br>
+-&nbsp;customerID:&nbsp;dropped&nbsp;if&nbsp;present&nbsp;(identifier,&nbsp;not&nbsp;a&nbsp;feature).<br>
+-&nbsp;Churn:&nbsp;mapped&nbsp;to&nbsp;0/1&nbsp;if&nbsp;present.</span></dd></dl>
+ <dl><dt><a name="-engineer_features"><strong>engineer_features</strong></a>(df: pandas.core.frame.DataFrame) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Apply&nbsp;the&nbsp;same&nbsp;derived&nbsp;features&nbsp;used&nbsp;in&nbsp;notebook&nbsp;Section&nbsp;6:<br>
+num_add_on_services,&nbsp;avg_monthly_spend,&nbsp;tenure_bucket.</span></dd></dl>
+ <dl><dt><a name="-prepare_for_scoring"><strong>prepare_for_scoring</strong></a>(raw_record: dict) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Full&nbsp;pipeline&nbsp;from&nbsp;a&nbsp;raw&nbsp;customer&nbsp;record&nbsp;(as&nbsp;collected&nbsp;by&nbsp;app.py's<br>
+form)&nbsp;to&nbsp;a&nbsp;single-row&nbsp;DataFrame&nbsp;ready&nbsp;for&nbsp;model.predict_proba().<br>
+Raises&nbsp;ValueError&nbsp;on&nbsp;a&nbsp;missing&nbsp;required&nbsp;field,&nbsp;rather&nbsp;than&nbsp;letting&nbsp;a<br>
+KeyError&nbsp;surface&nbsp;from&nbsp;deep&nbsp;inside&nbsp;pandas.</span></dd></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>ADD_ON_COLUMNS</strong> = ['OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies']<br>
+<strong>RAW_FEATURE_COLUMNS</strong> = ['gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod', 'MonthlyCharges', 'TotalCharges']</td></tr></table>
+</body></html>

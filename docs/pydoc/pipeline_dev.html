@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module pipeline_dev</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">pipeline_dev</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/Users/munmundas/Documents/Telco_Customer_Churn/src/pipeline_dev.py">/Users/munmundas/Documents/Telco_Customer_Churn/src/pipeline_dev.py</a></td></tr></table>
+    <p><span class="code">Development/verification&nbsp;script&nbsp;for&nbsp;the&nbsp;churn&nbsp;pipeline.<br>
+Not&nbsp;a&nbsp;deliverable&nbsp;--&nbsp;used&nbsp;to&nbsp;validate&nbsp;logic&nbsp;before&nbsp;it&nbsp;is&nbsp;transcribed&nbsp;into<br>
+the&nbsp;notebook.&nbsp;Run&nbsp;with:&nbsp;source&nbsp;venv/bin/activate&nbsp;&amp;&amp;&nbsp;python&nbsp;src/pipeline_dev.py</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="numpy.html">numpy</a><br>
+</td><td class="multicolumn"><a href="pandas.html">pandas</a><br>
+</td><td class="multicolumn"><a href="sys.html">sys</a><br>
+</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-audit"><strong>audit</strong></a>(df: pandas.core.frame.DataFrame) -&gt; None</dt><dd><span class="code">Print&nbsp;shape,&nbsp;dtypes,&nbsp;null&nbsp;counts,&nbsp;blank-TotalCharges&nbsp;rows,&nbsp;and&nbsp;the&nbsp;churn&nbsp;base&nbsp;rate.</span></dd></dl>
+ <dl><dt><a name="-clean"><strong>clean</strong></a>(df: pandas.core.frame.DataFrame) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Coerce&nbsp;TotalCharges&nbsp;to&nbsp;numeric,&nbsp;fill&nbsp;the&nbsp;structural-zero&nbsp;rows<br>
+(tenure&nbsp;==&nbsp;0),&nbsp;normalize&nbsp;SeniorCitizen,&nbsp;drop&nbsp;customerID,&nbsp;and&nbsp;map<br>
+Churn&nbsp;to&nbsp;0/1.&nbsp;See&nbsp;notebook&nbsp;Section&nbsp;4&nbsp;for&nbsp;the&nbsp;full&nbsp;rationale.</span></dd></dl>
+ <dl><dt><a name="-load_raw"><strong>load_raw</strong></a>(path: str) -&gt; pandas.core.frame.DataFrame</dt><dd><span class="code">Load&nbsp;the&nbsp;raw&nbsp;Telco&nbsp;churn&nbsp;CSV,&nbsp;raising&nbsp;a&nbsp;clear&nbsp;error&nbsp;if&nbsp;it&nbsp;is&nbsp;missing.</span></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt><dd><span class="code">Run&nbsp;the&nbsp;audit&nbsp;-&gt;&nbsp;clean&nbsp;-&gt;&nbsp;outlier-scan&nbsp;sequence&nbsp;and&nbsp;print&nbsp;results.</span></dd></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>DATA_PATH</strong> = 'data/WA_Fn-UseC_-Telco-Customer-Churn.csv'</td></tr></table>
+</body></html>

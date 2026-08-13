@@ -1,0 +1,132 @@
+# Azure DevOps pipeline (CI/CD) for the churn model.
+# Mirrors the flow in the MLOps pipeline diagram: CI -> train/evaluate ->
+# champion/challenger compare -> manual approval gate -> canary deploy ->
+# full rollout. A GitHub Actions equivalent would use the same stages with
+# azure/login + azure/cli actions in place of the AzureCLI@2 task.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/*
+      - deployment/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  azureServiceConnection: telco-churn-azure-connection
+  resourceGroup: rg-telco-churn-prod
+  workspaceName: mlw-telco-churn
+  endpointName: telco-churn-scoring-endpoint
+
+stages:
+  - stage: CI
+    displayName: "Lint, unit test, data validation"
+    jobs:
+      - job: RunChecks
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.11"
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest ruff
+            displayName: "Install dependencies"
+          - script: ruff check src/
+            displayName: "Lint"
+          - script: pytest tests/ --junitxml=test-results.xml
+            displayName: "Unit tests"
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFiles: "test-results.xml"
+
+  - stage: TrainAndEvaluate
+    displayName: "Submit Azure ML training pipeline"
+    dependsOn: CI
+    jobs:
+      - job: SubmitPipeline
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az ml job create \
+                  --file deployment/training_pipeline.yml \
+                  --resource-group $(resourceGroup) \
+                  --workspace-name $(workspaceName) \
+                  --stream
+
+  - stage: ApprovalGate
+    displayName: "Manual approval before production deployment"
+    dependsOn: TrainAndEvaluate
+    jobs:
+      - deployment: ReleaseApproval
+        environment: telco-churn-production   # environment configured with
+                                                 # required reviewers in Azure
+                                                 # DevOps -- this is where the
+                                                 # release-manager sign-off
+                                                 # from the MLOps diagram lives
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: echo "Approved for deployment"
+
+  - stage: CanaryDeploy
+    displayName: "Deploy challenger at 10 percent traffic"
+    dependsOn: ApprovalGate
+    jobs:
+      - job: DeployCanary
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az ml online-deployment create \
+                  --file deployment/managed_online_deployment.yml \
+                  --resource-group $(resourceGroup) \
+                  --workspace-name $(workspaceName)
+                az ml online-endpoint update \
+                  --name $(endpointName) \
+                  --traffic "xgboost-v1=10" \
+                  --resource-group $(resourceGroup) \
+                  --workspace-name $(workspaceName)
+
+  - stage: HealthCheck
+    displayName: "Monitor canary for 30 minutes before full rollout"
+    dependsOn: CanaryDeploy
+    jobs:
+      - job: WatchCanary
+        steps:
+          - script: |
+              sleep 1800
+              # production implementation queries Azure Monitor for the
+              # canary deployment's error rate and latency p95 here, and
+              # fails the stage (blocking FullRollout) if either breaches
+              # the threshold defined in monitoring_job.yml
+            displayName: "Wait and check canary health"
+
+  - stage: FullRollout
+    displayName: "Shift 100 percent traffic to challenger"
+    dependsOn: HealthCheck
+    jobs:
+      - job: PromoteFull
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az ml online-endpoint update \
+                  --name $(endpointName) \
+                  --traffic "xgboost-v1=100" \
+                  --resource-group $(resourceGroup) \
+                  --workspace-name $(workspaceName)

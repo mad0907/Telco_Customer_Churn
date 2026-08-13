@@ -1,0 +1,36 @@
+# Azure ML CLI v2 scheduled job for drift and performance monitoring.
+# Runs daily; its outputs are what trigger the unscheduled retrain path
+# in training_pipeline.yml (via the shared monitoring_alerts queue) and
+# feed the Azure Monitor dashboard used for the operational monitors
+# described in Section 12 of the notebook.
+
+$schema: https://azuremlschemas.azureedge.net/latest/commandJob.schema.json
+type: command
+display_name: telco-churn-monitoring-job
+experiment_name: telco-churn-monitoring
+compute: azureml:cpu-cluster-training
+environment: azureml:telco-churn-scoring-env:1
+
+inputs:
+  reference_data:
+    type: uri_file
+    path: azureml://datastores/telco_raw/paths/training_snapshot/latest.csv
+  scored_production_data:
+    type: uri_file
+    path: azureml://datastores/telco_predictions/paths/last_30_days/
+
+code: .
+command: >
+  python monitoring/compute_drift_and_performance.py
+  --reference-data ${{inputs.reference_data}}
+  --scored-data ${{inputs.scored_production_data}}
+  --psi-threshold 0.2
+  --priority-features Contract,tenure,InternetService,PaymentMethod
+  --recall-floor 0.70
+  --alert-topic telco-churn-monitoring-alerts
+
+schedule:
+  frequency: day
+  interval: 1
+  start_time: "2026-01-01T06:00:00"
+  time_zone: "UTC"

@@ -1,0 +1,92 @@
+# Azure ML CLI v2 pipeline definition (schema: pipeline job).
+# Runs on a schedule (weekly) and can also be triggered on demand by the
+# drift-detection job described in monitoring_job.yml. Registers a model
+# only if it beats the current production model on the cost-sensitive
+# metric from Section 9.3 of the notebook -- promotion is a separate,
+# gated step, not automatic.
+
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+display_name: telco-churn-training-pipeline
+experiment_name: telco-churn-retraining
+description: >
+  Scheduled and drift-triggered retraining pipeline for the churn model.
+  Compares the newly trained candidate against the current production
+  model before registering it as a challenger.
+
+settings:
+  default_compute: azureml:cpu-cluster-training
+  continue_on_step_failure: false
+
+inputs:
+  raw_data:
+    type: uri_file
+    path: azureml://datastores/telco_raw/paths/customer_churn/latest.csv
+  cost_false_negative:
+    type: number
+    default: 400
+  cost_false_positive:
+    type: number
+    default: 50
+
+jobs:
+  validate_data:
+    type: command
+    component: azureml:data_validation_component@latest
+    inputs:
+      data: ${{parent.inputs.raw_data}}
+    outputs:
+      validated_data:
+        type: uri_file
+
+  engineer_features:
+    type: command
+    component: azureml:feature_engineering_component@latest
+    inputs:
+      data: ${{parent.jobs.validate_data.outputs.validated_data}}
+    outputs:
+      feature_table:
+        type: uri_file
+        # registered to the managed feature store, not just written to blob
+        path: azureml://feature-stores/telco-fs/feature-sets/churn-features/versions/auto
+
+  train_candidate:
+    type: command
+    component: azureml:train_xgboost_component@latest
+    inputs:
+      features: ${{parent.jobs.engineer_features.outputs.feature_table}}
+      cost_false_negative: ${{parent.inputs.cost_false_negative}}
+      cost_false_positive: ${{parent.inputs.cost_false_positive}}
+    outputs:
+      model:
+        type: mlflow_model
+      eval_report:
+        type: uri_file
+
+  champion_challenger_compare:
+    type: command
+    component: azureml:champion_challenger_component@latest
+    inputs:
+      challenger_model: ${{parent.jobs.train_candidate.outputs.model}}
+      challenger_report: ${{parent.jobs.train_candidate.outputs.eval_report}}
+      production_model_name: telco-churn-xgboost
+      production_model_stage: production
+    outputs:
+      decision:
+        type: uri_file  # {"promote": true/false, "reason": "..."}
+
+  register_if_better:
+    type: command
+    component: azureml:conditional_register_component@latest
+    inputs:
+      model: ${{parent.jobs.train_candidate.outputs.model}}
+      decision: ${{parent.jobs.champion_challenger_compare.outputs.decision}}
+    # registers to the model registry with stage=challenger only if
+    # decision.promote == true; production promotion is a separate,
+    # manually-gated deployment pipeline (see cicd_pipeline.yml)
+
+schedule:
+  frequency: week
+  interval: 1
+  start_time: "2026-01-05T02:00:00"
+  time_zone: "UTC"

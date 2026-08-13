@@ -1,0 +1,16 @@
+# Azure ML CLI v2 managed online endpoint definition.
+# The endpoint is a stable, versioned URL; deployments underneath it
+# (below) are what actually carry model versions and traffic splits,
+# which is what makes canary rollout possible.
+
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: telco-churn-scoring-endpoint
+auth_mode: key
+description: >
+  Scoring endpoint for the Telco churn model. Every request/response pair
+  is logged through the governance pipeline (see governance_logging.md)
+  before the response is returned to the caller.
+tags:
+  business_unit: retention
+  data_classification: customer-pii
+  model_risk_tier: medium

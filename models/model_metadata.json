@@ -1,0 +1,42 @@
+{
+  "model_name": "telco-churn-xgboost",
+  "model_version": "1",
+  "operating_threshold": 0.3,
+  "feature_columns": [
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "tenure",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
+    "MonthlyCharges",
+    "TotalCharges",
+    "num_add_on_services",
+    "avg_monthly_spend",
+    "tenure_bucket"
+  ],
+  "risk_tier_bins": [
+    -0.01,
+    0.3,
+    0.6,
+    0.8,
+    1.01
+  ],
+  "risk_tier_labels": [
+    "Low",
+    "Medium",
+    "High",
+    "Critical"
+  ]
+}
